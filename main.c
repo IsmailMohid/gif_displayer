@@ -9,7 +9,8 @@
 #include <drm.h>
 
 void flip_handler(int fd, unsigned int frame, unsigned int sec, unsigned int usec, void *data){
-    printf("Flip finished! Frame: %u at %u.%u seconds\n", frame, sec, usec);
+    printf("Flip finished! Frame: %u at %u.%u seconds %d\n", frame, sec, usec, fd);
+    data = data;
 }
 
 
@@ -140,7 +141,7 @@ int main(){
         return 1;
     }
 
-    prinf("Waiting for flip\n");
+    printf("Waiting for flip\n");
     drmHandleEvent(fd, &ev);
 
     printf("displaying frame 2 now goin to sleep for 2 seconds... \n");
