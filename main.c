@@ -8,6 +8,10 @@
 #include <sys/mman.h>
 #include <drm.h>
 
+void flip_handler(int fd, unsigned int frame, unsigned int sec, unsigned int usec, void *data){
+    printf("Flip finished! Frame: %u at %u.%u seconds\n", frame, sec, usec);
+}
+
 
 int main(){
     int fd;
@@ -124,9 +128,21 @@ int main(){
 
     printf("displaying frame 1 now goin to sleep for 2 seconds... \n");
     sleep(2);
+
+    drmEventContext ev = {
+        .version = 2,
+        .page_flip_handler = flip_handler
+    };
     
 
-    drmModePageFlip(fd, crtc_id, fb_id[1], DRM_MODE_PAGE_FLIP_ASYNC, NULL);
+    if(drmModePageFlip(fd, crtc_id, fb_id[1], DRM_MODE_PAGE_FLIP_EVENT, NULL) != 0){
+        perror("Failed to flip");
+        return 1;
+    }
+
+    prinf("Waiting for flip\n");
+    drmHandleEvent(fd, &ev);
+
     printf("displaying frame 2 now goin to sleep for 2 seconds... \n");
     sleep(2);
 
