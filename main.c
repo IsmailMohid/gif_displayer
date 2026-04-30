@@ -76,6 +76,9 @@ int main(){
     // frame buffer points to a dumb buffer and attaches some metadata like the resolution, pixel format, depth, pitch, etc. lives in kernel memory
     
     // create 2nd dumb buffer
+    create2.width = mode.hdisplay;
+    create2.height = mode.vdisplay;
+    create2.bpp = 32;
     drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create2);
 
 
@@ -123,7 +126,7 @@ int main(){
     sleep(2);
     
 
-    drmModePageFlip(fd, crtc_id, fb_id[1], DRM_MODE_PAGE_FLIP_EVENT, NULL);
+    drmModePageFlip(fd, crtc_id, fb_id[1], DRM_MODE_PAGE_FLIP_ASYNC, NULL);
     printf("displaying frame 2 now goin to sleep for 2 seconds... \n");
     sleep(2);
 
