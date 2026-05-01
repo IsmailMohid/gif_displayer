@@ -15,6 +15,7 @@ void flip_handler(int fd, unsigned int frame, unsigned int sec, unsigned int use
 
 
 int main(){
+    #pragma region setup
     int fd;
 
     // store all info about resources from gpu
@@ -41,6 +42,12 @@ int main(){
     struct drm_mode_map_dumb map = {0};
     uint32_t *map_ptr1;
     uint32_t *map_ptr2;
+
+    // for handling response after page flips
+    drmEventContext ev = {
+        .version = 2,
+        .page_flip_handler = flip_handler
+    };
 
 
     fd = open("/dev/dri/card1", O_RDWR | __O_CLOEXEC);
@@ -115,6 +122,8 @@ int main(){
     drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map);
     map_ptr2 = mmap(0, create2.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, map.offset);
 
+    #pragma endregion
+
     // now we can draw by starting at map_ptr
     for(unsigned long long i = 0; i < (create1.size / 4); i++){ // need to divide by 4 because each pixel is 4 bytes wide
         map_ptr1[i] = 0xFF00FF; // just make that ts purple
@@ -129,11 +138,6 @@ int main(){
 
     printf("displaying frame 1 now goin to sleep for 2 seconds... \n");
     sleep(2);
-
-    drmEventContext ev = {
-        .version = 2,
-        .page_flip_handler = flip_handler
-    };
     
 
     if(drmModePageFlip(fd, crtc_id, fb_id[1], DRM_MODE_PAGE_FLIP_EVENT, NULL) != 0){
@@ -147,6 +151,8 @@ int main(){
     printf("displaying frame 2 now goin to sleep for 2 seconds... \n");
     sleep(2);
 
+
+    #pragma region cleanup
     // cleanup
     munmap(map_ptr1, create1.size);
     munmap(map_ptr2, create2.size);
@@ -154,6 +160,8 @@ int main(){
     drmModeRmFB(fd, fb_id[1]);
     drmModeFreeResources(res);
     close(fd);
+    
+    #pragma endregion cleanup
 
     return 0;
 }
