@@ -11,44 +11,6 @@
 #define MAX_FILENAME_LENGTH 500
 
 
-int main(int argc, char *argv[]){
-    if(argc != 2){
-        fprintf(stderr, "ERROR: Invalid arguments\n");
-        return 1;
-    }
-
-    FILE* file = open_gif(argv[1]);
-    if(file == NULL){
-        fprintf(stderr, "Gif open failed!\n");
-        return -1;
-    }
-
-    struct gif_info gif_stats = {0};
-
-    get_gif_info(file, &gif_stats);
-
-    printf("Header: %s, width: %u, height: %u, color_flag: %u, color_res: %u, sort_flag: %u, color_table_size: %u, bg_color_index: %u, pix_rat: %u\n", gif_stats.header, gif_stats.canvas_width, gif_stats.canvas_height, gif_stats.global_color_table_flag, gif_stats.color_resolution, gif_stats.sort_flag, gif_stats.global_color_table_size, gif_stats.background_color_index, gif_stats.pixel_aspect_ratio);
-
-    for(int i = 0; i < gif_stats.global_color_table_size; ++i){
-        printf("Color %d: 0x%06X\n", i, color_to_hex(gif_stats.global_color_table[i]));
-    }
-
-    
-
-
-     
-
-    // cleanup
-    gif_info_cleanup(&gif_stats);
-    fclose(file);
-
-    return 0;
-}
-
-
-static inline uint32_t color_to_hex(struct color col){
-    return ((uint32_t)col.red << 16) + ((uint32_t)col.green << 8) + (col.blue);
-}
 
 void get_gif_info(FILE* file, struct gif_info* info){
     uint8_t buf[13];
@@ -85,7 +47,7 @@ void get_gif_info(FILE* file, struct gif_info* info){
     // now we need the global color table
     if(info->global_color_table_flag == true){
 
-        info->global_color_table = malloc(sizeof(struct color) * info->global_color_table_size); // allocate color table
+        info->global_color_table = malloc(sizeof(int32_t) * info->global_color_table_size); // allocate color table
 
         uint8_t* buf2 = malloc(3 * info->global_color_table_size); // allocate buffer to read data from file
 
@@ -93,9 +55,7 @@ void get_gif_info(FILE* file, struct gif_info* info){
 
         // we could in theory write code that could fread directly into the color table and avoid this whole loop. bt this is way more readable and doesn't make me wanna kms tho so f that
         for(uint16_t i = 0; i < info->global_color_table_size; ++i){
-            info->global_color_table[i].red = buf2[3*i + 0];
-            info->global_color_table[i].green = buf2[3*i + 1];
-            info->global_color_table[i].blue = buf2[3*i + 2];
+            info->global_color_table[i] = (((uint32_t) buf2[3*i + 0] << 16) + ((uint32_t) buf2[3*i+1] << 8) + (buf2[3*i+2])) & 0x00FFFFFF ; // extract colors and zero out the most significant ones
         }
 
 

@@ -8,15 +8,17 @@
  */
 FILE* open_gif(char* filename);
 
-
+/*
 struct color{
     uint8_t red;
     uint8_t green;
     uint8_t blue;
 };
 
-static inline uint32_t color_to_hex(struct color col);
-
+static inline uint32_t color_to_hex(struct color col){
+    return ((uint32_t)col.red << 16) + ((uint32_t)col.green << 8) + (col.blue);
+}
+*/
 struct gif_info{
     char header[7]; // should be either "gif87a" or "gif89a"
 
@@ -25,14 +27,14 @@ struct gif_info{
 
     // contained in packed field byte
     bool global_color_table_flag;
-    uint8_t color_resolution; // 3 bits, color_resolution+1 is bits per color
+    uint8_t color_resolution; // 3 bits, color_resolution+1 is bits per color, not very important in modern gifs can ignore
     bool sort_flag; // can ignore, here for completeness
     uint16_t global_color_table_size; // 3 bits originally, number of entries in color table. each color entry will have 3 bytes for r, g, and b. color table isze is 2^(N+1)
 
     uint8_t background_color_index; // only matters if global_color_flag is true
     uint8_t pixel_aspect_ratio; // can ignore, here for completeness
 
-    struct color* global_color_table; // array of colors, will be of size global_color_table_size
+    int32_t* global_color_table; // array of colors, will be of size global_color_table_size
     // remember to write a cleanup function for this
 
     long image_data_pos; // to store the file position where image data starts so we can easily loop back later
@@ -74,7 +76,15 @@ struct image_info{
     //2 reserved bits
     uint16_t local_color_table_size; // 3 bits, size is 2^(N+1) entries, each entry has 3 bytes
 
-    struct color* local_color_table; // will set to NULL probably if not present
+    int32_t* local_color_table; // will set to NULL probably if not present
+};
+
+struct image{
+    int32_t* pixel_array; // flattened array, row major
+    uint16_t x_start;
+    uint16_t y_start;
+    uint16_t image_width;
+    uint16_t image_height;
 };
 
 /**
@@ -82,9 +92,17 @@ struct image_info{
  */
 void get_gif_info(FILE* file, struct gif_info* info);
 
+
+struct image get_next_image(FILE* file, struct gif_info g_info);
+
 /**
  * @brief cleans up gif_info struct
  */
 void gif_info_cleanup(struct gif_info* info);
 
+/**
+ * @brief cleans up image_info struct
+ */
 void image_info_cleanup(struct image_info* info);
+
+
