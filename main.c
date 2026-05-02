@@ -16,7 +16,25 @@ void flip_handler(int fd, unsigned int frame, unsigned int sec, unsigned int use
 }
 
 
-int main(){
+int main(int argc, char* argv[]){
+
+    if(argc != 2){
+        fprintf(stderr, "ERROR: Invalid arguments\n");
+        return 1;
+    }
+
+    FILE* file = open_gif(argv[1]);
+    if(file == NULL){
+        fprintf(stderr, "Gif open failed!\n");
+        return -1;
+    }
+
+    struct gif_info gif_stats = {0};
+
+    get_gif_info(file, &gif_stats);
+
+    struct image first_image = get_next_image(file, gif_stats);
+
     #pragma region setup
     int fd;
 
@@ -126,10 +144,22 @@ int main(){
 
     #pragma endregion
 
+    unsigned long long buf_len = first_image.image_height * first_image.image_width;
+    for(size_t i = 0; i < buf_len; ++i){
+        size_t gif_x = i % first_image.image_width;
+        size_t gif_y = i / first_image.image_width; 
+
+        size_t buf_pos = gif_y * (create1.pitch/4) + gif_x;
+
+        map_ptr1[buf_pos] = first_image.pixel_array[i];
+        
+    }
+
+    /*
     // now we can draw by starting at map_ptr
     for(unsigned long long i = 0; i < (create1.size / 4); i++){ // need to divide by 4 because each pixel is 4 bytes wide
         map_ptr1[i] = 0xFF00FF; // just make that ts purple
-    }
+    }*/
 
     for(unsigned long long i = 0; i < (create2.size / 4); i++){
         map_ptr2[i] = 0x00FF00; // make that ts green
@@ -155,7 +185,13 @@ int main(){
 
 
     #pragma region cleanup
-    // cleanup
+
+    // gif cleanup
+    image_cleanup(&first_image);
+    gif_info_cleanup(&gif_stats);
+    fclose(file);
+
+    // drm cleanup
     munmap(map_ptr1, create1.size);
     munmap(map_ptr2, create2.size);
     drmModeRmFB(fd, fb_id[0]);
