@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <drm.h>
 
+#include "gif.h"
+
 void flip_handler(int fd, unsigned int frame, unsigned int sec, unsigned int usec, void *data){
     printf("Flip finished! Frame: %u at %u.%u seconds %d\n", frame, sec, usec, fd);
     data = data;
