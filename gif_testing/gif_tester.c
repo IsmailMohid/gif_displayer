@@ -26,10 +26,23 @@ int main(int argc, char *argv[]){
 
     
 
+    struct image first_image = get_next_image(file, gif_stats);
+
+    printf("%u %u %u %u\n", first_image.x_start, first_image.y_start, first_image.image_width, first_image.image_height);
+
+    first_image = get_next_image(file, gif_stats);
+
+    uint32_t image_size = (uint32_t)first_image.image_height * first_image.image_width;
+
+    for(uint32_t i = 0; i < image_size; ++i){
+        printf("%06x,", first_image.pixel_array[i]);
+    }
+
 
      
 
     // cleanup
+    image_cleanup(&first_image);
     gif_info_cleanup(&gif_stats);
     fclose(file);
 

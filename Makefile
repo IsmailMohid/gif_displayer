@@ -3,13 +3,13 @@ CFLAGS = -Wall -Wextra -Werror
 LDFLAGS =
 
 TARGET = displayer
-OBJS = main.o
+OBJS = main.o gif.o
 
 DRM_CFLAGS := $(shell pkg-config --cflags libdrm)
 DRM_LIBS   := $(shell pkg-config --libs libdrm)
 
 # Append to standard flags
-CFLAGS += -Wall -Wextra $(DRM_CFLAGS)
+CFLAGS += $(DRM_CFLAGS)
 LDFLAGS += $(DRM_LIBS)
 
 $(TARGET): $(OBJS)
